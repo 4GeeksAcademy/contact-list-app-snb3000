@@ -1,9 +1,14 @@
-import { createContext, useState } from "react";
-const Context = createContext(null);
+const getState = ({ getStore, setStore }) => {
+  const handleResponse = (response) => {
+    if (!response.ok) throw Error(response.statusText);
+    return response.text().then((text) => (text ? JSON.parse(text) : {}));
+    // return response.json();
+  };
 
-const StoreWrapper = (props) => {
-  const [state, setState] = useState({
-    contacts: [],
+  return {
+    store: {
+      contacts: [],
+    },
     actions: {
       fetchContacts: async () => {
         const response = await fetch(
@@ -61,9 +66,5 @@ const StoreWrapper = (props) => {
         }));
       },
     },
-  });
-
-  return <Context.Provider value={state}>{props.children}</Context.Provider>;
+  };
 };
-
-export { Context, StoreWrapper };
