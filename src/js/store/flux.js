@@ -10,36 +10,53 @@ const getState = ({ getStore, setStore }) => {
       contacts: [],
     },
     actions: {
-      fetchContacts: async () => {
-        const response = await fetch(
-          "https://playground.4geeks.com/contact/docs"
-        );
-        const data = await response.json();
-        setState((prevState) => ({
-          ...prevState,
-          contacts: data,
-        }));
+      fetchContacts: () => {
+        fetch("https://playground.4geeks.com/contact/agendas/NAME/contacts")
+          .then(handleResponse)
+          .then((data) => {
+            console.log("Fetched contacts data:", data); // Log fetched data
+            if (Array.isArray(data.contacts)) {
+              setStore({ contacts: data.contacts });
+              console.log("Contacts set in store:", data.contacts);
+            } else {
+              console.error("Fetched data is not an array:", data);
+              setStore({ contacts: [] });
+            }
+          })
+          .catch((error) => {
+            console.error("Fetching contacts failed:", error);
+            getState({ getStore, setStore }).actions.addAgendaSlug();
+          });
       },
-      addContact: async (contact) => {
-        const response = await fetch(
-          "https://playground.4geeks.com/contact/docs",
+      addAgendaSlug: () => {
+        fetch("https://playground.4geeks.com/contact/agendas/NAME", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({}),
+        })
+          .then(handleResponse)
+          .then((data) => {
+            console.log("Agenda added successfully:", data);
+            getState({ getStore, setStore }).actions.fetchContacts();
+          })
+          .catch((error) => console.error("Adding agenda slug failed:", error));
+      },
+      addContact: (contactData) => {
+        fetch("https://playground.4geeks.com/contact/agendas/NAME/contacts",
           {
             method: "POST",
             headers: {
               "Content-Type": "application/json",
             },
-            body: JSON.stringify(contact),
+            body: JSON.stringify(contactData),
           }
-        );
-        const newContact = await response.json();
-        setState((prevState) => ({
-          ...prevState,
-          contacts: [...prevState.contacts, newContact],
-        }));
+        )
+          .then(handleResponse)
+          .then(() => getState({ getStore, setStore }).actions.fetchContacts())
+          .catch((error) => console.error('Adding contact failed:', error));
       },
-      updateContact: async (id, updatedContact) => {
-        const response = await fetch(
-          `https://playground.4geeks.com/contact/docs/${id}`,
+      updateContact: (id, updatedContact) => {
+        fetch(`https://playground.4geeks.com/contact/agendas/NAME/contacts/${id}`,
           {
             method: "PUT",
             headers: {
@@ -47,24 +64,21 @@ const getState = ({ getStore, setStore }) => {
             },
             body: JSON.stringify(updatedContact),
           }
-        );
-        const updatedData = await response.json();
-        setState((prevState) => ({
-          ...prevState,
-          contacts: prevState.contacts.map((contact) =>
-            contact.id === id ? updatedData : contact
-          ),
-        }));
+        )
+          .then(handleResponse)
+          .then(() => getState({ getStore, setStore }).actions.fetchContacts())
+          .catch((error) => console.error('Editing contact failed:', error));
       },
-      deleteContact: async (id) => {
-        await fetch(`https://playground.4geeks.com/contact/docs/${id}`, {
+      deleteContact: (id) => {
+        fetch(`https://playground.4geeks.com/contact/agendas/NAME/contacts/${id}`, {
           method: "DELETE",
-        });
-        setState((prevState) => ({
-          ...prevState,
-          contacts: prevState.contacts.filter((contact) => contact.id !== id),
-        }));
+        })
+          .then(handleResponse)
+          .then(() => getState({ getStore, setStore }).actions.fetchContacts())
+          .catch((error) => console.error('Deleting contact failed:', error));
       },
     },
   };
 };
+
+export default getState;
